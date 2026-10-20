@@ -21,8 +21,10 @@ import java.time.Duration;
 public class AutoAnswer implements ClientModInitializer {
 
     private static final String PROMPT =
-        "This is a chat game question. Reply with ONLY the shortest correct answer: "
-        + "no explanation, no punctuation, no full sentence. For math, reply with just the number. Question: ";
+        "This is a trivia question from a chat game on a Minecraft server. Reply with ONLY the answer: "
+        + "one word if possible, singular form, lowercase, no punctuation, no explanation. "
+        + "For Minecraft questions use the exact in-game name (for example elytra, diamond). "
+        + "For math, reply with just the number.\n";
 
     // "keyword,keyword=answer" - every keyword must appear in the question
     private static final String[] ANSWERS = {
@@ -50,6 +52,7 @@ public class AutoAnswer implements ClientModInitializer {
     };
 
     private String lastQuestion = "";
+    private String category = "";
 
     @Override
     public void onInitializeClient() {
@@ -61,6 +64,13 @@ public class AutoAnswer implements ClientModInitializer {
     private void onChat(String text) {
         String raw = ChatFormatting.stripFormatting(text);
         if (raw == null) return;
+        int c = raw.indexOf("Category:");
+        if (c >= 0) {
+            String cat = raw.substring(c + 9);
+            int qi = cat.indexOf("Question:");
+            if (qi >= 0) cat = cat.substring(0, qi);
+            category = cat.trim();
+        }
         int idx = raw.indexOf("Question:");
         if (idx < 0) return;
 
@@ -118,7 +128,7 @@ public class AutoAnswer implements ClientModInitializer {
     private String askAI(String key, String question) {
         try {
             JsonObject part = new JsonObject();
-            part.addProperty("text", PROMPT + question);
+            part.addProperty("text", PROMPT + "Category: " + category + "\nQuestion: " + question);
             JsonArray parts = new JsonArray();
             parts.add(part);
             JsonObject content = new JsonObject();
@@ -127,6 +137,7 @@ public class AutoAnswer implements ClientModInitializer {
             contents.add(content);
             JsonObject gen = new JsonObject();
             gen.addProperty("maxOutputTokens", 200);
+            gen.addProperty("temperature", 0);
             JsonObject body = new JsonObject();
             body.add("contents", contents);
             body.add("generationConfig", gen);
