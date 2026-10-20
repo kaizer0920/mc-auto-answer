@@ -104,27 +104,36 @@ public class AutoAnswer implements ClientModInitializer {
 
     private String askAI(String key, String question) {
         try {
-            JsonObject msg = new JsonObject();
-            msg.addProperty("role", "user");
-            msg.addProperty("content", PROMPT + question);
-            JsonArray msgs = new JsonArray();
-            msgs.add(msg);
+            JsonObject part = new JsonObject();
+            part.addProperty("text", PROMPT + question);
+            JsonArray parts = new JsonArray();
+            parts.add(part);
+            JsonObject content = new JsonObject();
+            content.add("parts", parts);
+            JsonArray contents = new JsonArray();
+            contents.add(content);
+            JsonObject think = new JsonObject();
+            think.addProperty("thinkingBudget", 0);
+            JsonObject gen = new JsonObject();
+            gen.addProperty("maxOutputTokens", 60);
+            gen.add("thinkingConfig", think);
             JsonObject body = new JsonObject();
-            body.addProperty("model", "claude-haiku-5-5");
-            body.addProperty("max_tokens", 30);
-            body.add("messages", msgs);
+            body.add("contents", contents);
+            body.add("generationConfig", gen);
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create("https://api.anthropic.com/v1/messages"))
+            HttpRequest req = HttpRequest.newBuilder(URI.create(
+                    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"))
                 .timeout(Duration.ofSeconds(15))
-                .header("x-api-key", key)
-                .header("anthropic-version", "2023-06-01")
+                .header("x-goog-api-key", key)
                 .header("content-type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
                 .build();
             HttpResponse<String> res = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString());
 
             String text = JsonParser.parseString(res.body()).getAsJsonObject()
-                .getAsJsonArray("content").get(0).getAsJsonObject().get("text").getAsString();
+                .getAsJsonArray("candidates").get(0).getAsJsonObject()
+                .getAsJsonObject("content").getAsJsonArray("parts").get(0).getAsJsonObject()
+                .get("text").getAsString();
             text = text.trim().replaceAll("[.!\"]+$", "").replaceAll("^\"+", "");
             return text.toLowerCase();
         } catch (Exception e) {
