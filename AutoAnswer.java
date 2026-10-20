@@ -93,7 +93,7 @@ public class AutoAnswer implements ClientModInitializer {
     private void debug(String text) {
         Minecraft mc = Minecraft.getInstance();
         mc.execute(() -> {
-            if (mc.player != null) mc.player.displayClientMessage(Component.literal("[AA] " + text), false);
+            if (mc.player != null) mc.player.sendSystemMessage(Component.literal("[AA] " + text));
         });
     }
 
