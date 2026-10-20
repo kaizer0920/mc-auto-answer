@@ -125,17 +125,14 @@ public class AutoAnswer implements ClientModInitializer {
             content.add("parts", parts);
             JsonArray contents = new JsonArray();
             contents.add(content);
-            JsonObject think = new JsonObject();
-            think.addProperty("thinkingBudget", 0);
             JsonObject gen = new JsonObject();
-            gen.addProperty("maxOutputTokens", 60);
-            gen.add("thinkingConfig", think);
+            gen.addProperty("maxOutputTokens", 200);
             JsonObject body = new JsonObject();
             body.add("contents", contents);
             body.add("generationConfig", gen);
 
             HttpRequest req = HttpRequest.newBuilder(URI.create(
-                    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"))
+                    "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent"))
                 .timeout(Duration.ofSeconds(15))
                 .header("x-goog-api-key", key)
                 .header("content-type", "application/json")
