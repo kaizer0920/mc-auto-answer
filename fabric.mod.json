@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "autoanswer",
+  "version": "1.0.0",
+  "name": "Auto Answer",
+  "description": "Client-side chat game auto answer.",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.autoanswer.AutoAnswer"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "26.2",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}
