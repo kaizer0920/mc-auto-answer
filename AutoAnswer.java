@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -66,15 +67,20 @@ public class AutoAnswer implements ClientModInitializer {
         String question = raw.substring(idx + 9).trim();
         if (question.isEmpty() || question.equals(lastQuestion)) return;
         lastQuestion = question;
+        debug("question: " + question);
 
         String answer = solve(question);
         if (answer != null) {
+            debug("local answer: " + answer);
             send(answer);
             return;
         }
 
         String key = readKey();
-        if (key == null) return;
+        if (key == null) {
+            debug("no key file found");
+            return;
+        }
         final String q = question;
         new Thread(() -> {
             String a = askAI(key, q);
@@ -82,6 +88,11 @@ public class AutoAnswer implements ClientModInitializer {
                 Minecraft.getInstance().execute(() -> send(a));
             }
         }).start();
+    }
+
+    private void debug(String text) {
+        Minecraft mc = Minecraft.getInstance();
+        mc.execute(() -> mc.gui.getChat().addMessage(Component.literal("[AA] " + text)));
     }
 
     private void send(String answer) {
@@ -129,14 +140,21 @@ public class AutoAnswer implements ClientModInitializer {
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
                 .build();
             HttpResponse<String> res = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString());
+            if (res.statusCode() != 200) {
+                String b = res.body();
+                debug("AI error " + res.statusCode() + ": " + b.substring(0, Math.min(150, b.length())));
+                return null;
+            }
 
             String text = JsonParser.parseString(res.body()).getAsJsonObject()
                 .getAsJsonArray("candidates").get(0).getAsJsonObject()
                 .getAsJsonObject("content").getAsJsonArray("parts").get(0).getAsJsonObject()
                 .get("text").getAsString();
             text = text.trim().replaceAll("[.!\"]+$", "").replaceAll("^\"+", "");
+            debug("AI answer: " + text.toLowerCase());
             return text.toLowerCase();
         } catch (Exception e) {
+            debug("AI exception: " + e);
             return null;
         }
     }
