@@ -1,28 +1,23 @@
 plugins {
-    id 'java'
-    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
 }
 
-version = '1.0.0'
+version = project.mod_version
 group = 'com.autoanswer'
 base { archivesName = 'autoanswer' }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
-
-minecraft {
-    mappings channel: 'official', version: '1.20.1'
-    runs {
-        client {
-            workingDirectory project.file('run')
-            mods { autoanswer { source sourceSets.main } }
-        }
-    }
-}
-
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.20.1-47.3.0'
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 }
 
-tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
+}
 
-jar { finalizedBy 'reobfJar' }
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}

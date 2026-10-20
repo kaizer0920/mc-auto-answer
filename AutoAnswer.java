@@ -3,13 +3,11 @@ package com.autoanswer;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.client.event.ClientChatReceivedEvent;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLPaths;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -19,8 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 
-@Mod("autoanswer")
-public class AutoAnswer {
+public class AutoAnswer implements ClientModInitializer {
 
     private static final String PROMPT =
         "This is a chat game question. Reply with ONLY the shortest correct answer: "
@@ -53,13 +50,15 @@ public class AutoAnswer {
 
     private String lastQuestion = "";
 
-    public AutoAnswer() {
-        MinecraftForge.EVENT_BUS.register(this);
+    @Override
+    public void onInitializeClient() {
+        ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
+            if (!overlay) onChat(message.getString());
+        });
     }
 
-    @SubscribeEvent
-    public void onChat(ClientChatReceivedEvent event) {
-        String raw = ChatFormatting.stripFormatting(event.getMessage().getString());
+    private void onChat(String text) {
+        String raw = ChatFormatting.stripFormatting(text);
         if (raw == null) return;
         int idx = raw.indexOf("Question:");
         if (idx < 0) return;
@@ -94,7 +93,7 @@ public class AutoAnswer {
 
     private String readKey() {
         try {
-            Path p = FMLPaths.CONFIGDIR.get().resolve("autoanswer-key.txt");
+            Path p = FabricLoader.getInstance().getConfigDir().resolve("autoanswer-key.txt");
             if (!Files.exists(p)) return null;
             String k = Files.readString(p).trim();
             return k.isEmpty() ? null : k;
