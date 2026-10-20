@@ -8,15 +8,14 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
-      - uses: gradle/actions/setup-gradle@v3
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: 8.1.1
+          gradle-version: 9.5.1
       - run: |
-          mkdir -p src/main/java/com/autoanswer src/main/resources/META-INF
+          mkdir -p src/main/java/com/autoanswer src/main/resources
           mv AutoAnswer.java src/main/java/com/autoanswer/
-          mv mods.toml src/main/resources/META-INF/
-          mv pack.mcmeta src/main/resources/
+          mv fabric.mod.json src/main/resources/
       - run: gradle build
       - uses: actions/upload-artifact@v4
         with:
